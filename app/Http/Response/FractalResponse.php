@@ -28,13 +28,21 @@ class FractalResponse
         $this->manager->setSerializer($serializer);
     }
 
-    public function item($data, TransformerAbstract $transformer, $resourceKey = null): array
-    {
+    public function item(
+        $data, 
+        TransformerAbstract $transformer, 
+        $resourceKey = null
+    ): array {
+
         return $this->createDataArray(new Item($data, $transformer, $resourceKey));
     }
 
-    public function collection($data, TransformerAbstract $transformer, $resourceKey = null): array
-    {
+    public function collection(
+        $data, 
+        TransformerAbstract $transformer, 
+        $resourceKey = null
+    ): array {
+
         return $this->createDataArray(new Collection($data, $transformer, $resourceKey));
     }
 

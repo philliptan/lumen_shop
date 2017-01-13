@@ -46,10 +46,17 @@ class Handler extends ExceptionHandler
     public function render($request, Exception $e)
     {   
         $statusCode = $e->getCode() !== 0 ?: 500;
+        $message = $e->getMessage();
+
+        if ($e instanceof ModelNotFoundException)
+        {
+            $statusCode = 404;
+            $message    = 'Not Found!';
+        }
 
         return response(
             [
-                'message' => $e->getMessage(),
+                'message' => $message,
                 'file'    => $e->getFile(),
                 'line'    => $e->getLine(),
                 'trace'   => $e->getTrace(),

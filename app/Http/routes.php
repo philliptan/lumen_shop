@@ -16,7 +16,7 @@ $app->get('/', function () use ($app) {
     return $app->version();
 });
 
-$app->get('users/profile', [
+$app->get('users/profile/{id}', [
     'as' => 'profile', 'uses' => 'UsersController@profile'
 ]);
 

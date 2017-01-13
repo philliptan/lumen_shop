@@ -4,43 +4,87 @@ declare(strict_types=1);
 namespace Tests\App\Http\Controllers;
 
 use TestCase;
+use App\User;
+use Carbon\Carbon;
+use Laravel\Lumen\Testing\DatabaseMigrations;
 
 class UsersControllerTest extends TestCase
 {
-    /**
-     * Test response status code 200.
-     *
-     * @return void
-     */
-    public function testProfileStatusCode200(): void
+    use DatabaseMigrations;
+
+    public function setUp()
     {
-        $this->get('/users/profile')->seeStatusCode(200);
+        parent::setUp();
+        Carbon::setTestNow(Carbon::now('UTC'));
     }
 
-    /**
-     * Test response empty json
-     *
-     * @return void
-     */
-    public function testProfileEmptyJson(): void
+    public function tearDown()
     {
-        $this->get('/users/profile')->seeJson([]);
+        parent::tearDown();
+        Carbon::setTestNow();
     }
 
-    /**
-     * Test valid response users/get_list
-     *
-     * @return void
-     */
-    public function testValidResponseGetList(): void
+    /** @test **/
+    public function profile_return_status_code_404(): void
+    {
+        $user = factory(User::class)->create();
+        $this->get('/users/profile/999999')->seeStatusCode(404);
+    }
+
+    /** @test **/
+    public function profile_return_status_code_200(): void
+    {
+        $user = factory(User::class)->create();
+        $this->get('/users/profile/' . $user->id)->seeStatusCode(200);
+    }
+
+    /** @test **/
+    public function profile_should_return_item_of_record(): void
+    {
+        $user = factory(User::class)->create();
+        
+        $this->get('/users/profile/' . $user->id);
+
+        $content = json_decode($this->response->getContent(), true);
+        $this->assertArrayHasKey('data', $content);
+
+        $data = $content['data'];
+
+        $this->assertEquals($user->id, $data['id']);
+        $this->assertEquals($user->username, $data['username']);
+        $this->assertEquals(
+            $user->created_at->toIso8601String(),
+            $data['created']
+        );
+        $this->assertEquals(
+            $user->updated_at->toIso8601String(),
+            $data['updated']
+        );
+    }
+
+    /** @test **/
+    public function get_list_return_status_code_200(): void
     {
         $this->get('/users/get_list')->seeStatusCode(200);
-        $data = json_decode($this->response->getContent(), true);
+    }
 
-        if ($data) {
-            $this->assertArrayHasKey('id', $data[0]);
-            $this->assertArrayHasKey('username', $data[0]);
-            $this->assertCount(2, array_keys($data[0]));
+    /** @test **/
+    public function get_list_should_return_a_collection_of_records(): void
+    {
+        $users = factory(User::class, 2)->create();
+
+        $this->get('/users/get_list');
+
+        $content = json_decode($this->response->getContent(), true);
+        $this->assertArrayHasKey('data', $content);
+
+        foreach ($users as $user) {
+            $this->seeJson([
+                'id'        => $user->id,
+                'username'  => $user->username,
+                'created'   => $user->created_at->toIso8601String(),
+                'updated'   => $user->updated_at->toIso8601String(),
+            ]);
         }
     }
 }

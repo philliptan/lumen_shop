@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Transformer\UserTransformer;
 use App\User;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
+
 
 /**
  * Class UsersController
@@ -19,9 +19,10 @@ class UsersController extends Controller
      *
      * @return array
      */
-    public function profile(): array
+    public function profile($id): array
     {
-        return [];
+        $user = User::findOrFail($id);
+        return $this->item($user, new UserTransformer());
     }
 
     /**
@@ -29,19 +30,9 @@ class UsersController extends Controller
      *
      * @return array
      */
-    public function getList(): Collection
+    public function getList(): array
     {
-        DB::listen(function($query) {
-            $message = "\n SQL ::: %s \n Binding ::: %s \n Timing ::: %s";
-            Log::debug(sprintf(
-                $message,
-                $query->sql,
-                implode(', ', $query->bindings),
-                $query->time
-            ));
-        });
-
-        return User::all();
+        return $this->collection(User::all(), new UserTransformer());
     }
 
     //

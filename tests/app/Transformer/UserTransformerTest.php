@@ -20,7 +20,7 @@ class UserTransformerTest extends TestCase
     }
 
     /** @test **/
-    public function it_transforms_a_book_model()
+    public function it_transforms_a_user_model()
     {
         $user = factory(User::class)->create();
         $subject = new UserTransformer();
@@ -29,5 +29,7 @@ class UserTransformerTest extends TestCase
 
         $this->assertArrayHasKey('id', $transform);
         $this->assertArrayHasKey('username', $transform);
+        $this->assertArrayHasKey('created', $transform);
+        $this->assertArrayHasKey('updated', $transform);
     }
 }
