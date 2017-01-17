@@ -5,8 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Response\FractalResponse;
 use Laravel\Lumen\Routing\Controller as BaseController;
 use League\Fractal\TransformerAbstract;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 
 class Controller extends BaseController
@@ -19,16 +17,6 @@ class Controller extends BaseController
     public function __construct(FractalResponse $fractal)
     {
         $this->fractal = $fractal;
-
-        /*DB::listen(function($query) {
-            $message = "\n SQL ::: %s \n Binding ::: %s \n Timing ::: %s";
-            Log::debug(sprintf(
-                $message,
-                $query->sql,
-                implode(', ', $query->bindings),
-                $query->time
-            ));
-        });*/
     }
 
     /**

@@ -16,12 +16,19 @@ $app->get('/', function () use ($app) {
     return $app->version();
 });
 
-$app->get('users/profile/{id}', [
-    'as' => 'profile', 'uses' => 'UsersController@profile'
+$app->get('users/{id}', [
+    'as'   => 'user.show', 
+    'uses' => 'UsersController@show'
 ]);
 
-$app->get('users/get_list', [
-    'uses' => 'UsersController@getList'
+$app->get('users', [
+    'as'   => 'user.index',
+    'uses' => 'UsersController@index'
+]);
+
+$app->post('users', [
+    'as'   => 'user.store',
+    'uses' => 'UsersController@store'
 ]);
 
 /** Authorized user **/

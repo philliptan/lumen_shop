@@ -12,10 +12,13 @@ class UsersControllerTest extends TestCase
 {
     use DatabaseMigrations;
 
+    private $users = [];
+
     public function setUp()
     {
         parent::setUp();
         Carbon::setTestNow(Carbon::now('UTC'));
+        $this->users = factory(User::class, 10)->create();
     }
 
     public function tearDown()
@@ -25,25 +28,23 @@ class UsersControllerTest extends TestCase
     }
 
     /** @test **/
-    public function profile_return_status_code_404(): void
+    public function get_return_status_code_404(): void
     {
-        $user = factory(User::class)->create();
-        $this->get('/users/profile/999999')->seeStatusCode(404);
+        $this->get('/users/999999')->seeStatusCode(404);
     }
 
     /** @test **/
-    public function profile_return_status_code_200(): void
+    public function get_return_status_code_200(): void
     {
-        $user = factory(User::class)->create();
-        $this->get('/users/profile/' . $user->id)->seeStatusCode(200);
+        $this->get('/users/' . $this->users[0]->id)->seeStatusCode(200);
     }
 
     /** @test **/
-    public function profile_should_return_item_of_record(): void
+    public function get_should_return_item_of_record(): void
     {
-        $user = factory(User::class)->create();
+        $user = $this->users[0];
         
-        $this->get('/users/profile/' . $user->id);
+        $this->get('/users/' . $user->id);
 
         $content = json_decode($this->response->getContent(), true);
         $this->assertArrayHasKey('data', $content);
@@ -65,20 +66,18 @@ class UsersControllerTest extends TestCase
     /** @test **/
     public function get_list_return_status_code_200(): void
     {
-        $this->get('/users/get_list')->seeStatusCode(200);
+        $this->get('/users')->seeStatusCode(200);
     }
 
     /** @test **/
     public function get_list_should_return_a_collection_of_records(): void
     {
-        $users = factory(User::class, 2)->create();
-
-        $this->get('/users/get_list');
+        $this->get('/users');
 
         $content = json_decode($this->response->getContent(), true);
         $this->assertArrayHasKey('data', $content);
 
-        foreach ($users as $user) {
+        foreach ($this->users as $user) {
             $this->seeJson([
                 'id'        => $user->id,
                 'username'  => $user->username,
@@ -86,5 +85,39 @@ class UsersControllerTest extends TestCase
                 'updated'   => $user->updated_at->toIso8601String(),
             ]);
         }
+    }
+
+    /***
+     |
+     | Store user
+     |
+     ***/
+
+    /** @test **/
+    public function store_should_save_new_user_in_the_database(): void
+    {
+        $this->post('/users', [
+            'username' => 'user.test.1',
+            'password' => '123456'
+        ]);
+
+        $this->seeJson([
+                'created' => true
+            ])
+            ->seeInDatabase('users', [
+                   'username' => 'user.test.1'
+            ]);
+    }
+
+    /** @test **/
+    public function store_should_respond_with_a_201_and_location_header_when_successful(): void
+    {
+        $this->post('/users', [
+            'username' => 'user.test.1',
+            'password' => '123456'
+        ]);
+
+        $this->seeStatusCode(201)
+             ->seeHeaderWithRegExp('Location', '#/users/[\d]+$#');
     }
 }

@@ -100,4 +100,15 @@ $app->group(['namespace' => 'App\Http\Controllers'], function ($app) {
     require __DIR__.'/../app/Http/routes.php';
 });
 
+$app->configureMonologUsing(function($monolog) {
+    $maxFiles = 7;
+
+    $monolog->pushHandler((new Monolog\Handler\RotatingFileHandler(
+        storage_path('logs/lumen.log'),
+        $maxFiles
+    ))->setFormatter(new Monolog\Formatter\LineFormatter(null, null, true, true)));
+
+    return $monolog;
+});
+
 return $app;

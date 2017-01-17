@@ -6,7 +6,8 @@ namespace App\Http\Controllers;
 use App\Transformer\UserTransformer;
 use App\User;
 use Illuminate\Database\Eloquent\Collection;
-
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 /**
  * Class UsersController
@@ -19,7 +20,7 @@ class UsersController extends Controller
      *
      * @return array
      */
-    public function profile($id): array
+    public function show($id): array
     {
         $user = User::findOrFail($id);
         return $this->item($user, new UserTransformer());
@@ -30,9 +31,22 @@ class UsersController extends Controller
      *
      * @return array
      */
-    public function getList(): array
+    public function index(): array
     {
         return $this->collection(User::all(), new UserTransformer());
+    }
+
+    /**
+     * POST /users
+     *
+     * @param  Request  $request
+     * @return Response
+     */
+    public function store(Request $request): Response
+    {
+        $user = User::create($request->all());
+        return response(['created' => true], 201)
+                ->header('Location', route('user.show', ['id' => $user->id]));
     }
 
     //
