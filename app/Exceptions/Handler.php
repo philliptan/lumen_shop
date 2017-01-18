@@ -8,6 +8,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Laravel\Lumen\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Response;
 
 class Handler extends ExceptionHandler
 {
@@ -45,23 +46,30 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $e)
     {   
-        $statusCode = $e->getCode() !== 0 ?: 500;
-        $message = $e->getMessage();
+        $statusCode = Response::HTTP_INTERNAL_SERVER_ERROR;
 
         if ($e instanceof ModelNotFoundException)
         {
-            $statusCode = 404;
-            $message    = 'Not Found!';
+            $statusCode = Response::HTTP_NOT_FOUND;
         }
 
-        return response(
-            [
-                'message' => $message,
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-                'trace'   => $e->getTrace(),
-            ], 
-            $statusCode
-        );
+        if ($e instanceof HttpException)
+        {
+            $statusCode = $e->getStatusCode();
+        }
+
+        $message = Response::$statusTexts[$statusCode];
+
+        $content = ['message' => $message];
+
+        if (env('APP_DEBUG')) {
+            $content = array_merge($content,  [
+                            'file'    => $e->getFile(),
+                            'line'    => $e->getLine(),
+                            'trace'   => $e->getTrace(),
+                        ]);
+        }
+
+        return response($content, $statusCode);
     }
 }

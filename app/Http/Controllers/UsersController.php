@@ -45,7 +45,24 @@ class UsersController extends Controller
     public function store(Request $request): Response
     {
         $user = User::create($request->all());
-        return response(['created' => true], 201)
+        return response(['created' => true], Response::HTTP_CREATED)
+                ->header('Location', route('user.show', ['id' => $user->id]));
+    }
+
+    /**
+     * POST /users/[\d]+
+     *
+     * @param  Request  $request
+     * @param  integer  $id
+     * @return Response
+     */
+    public function update(Request $request, int $id): Response
+    {
+        $user = User::findOrFail($id);
+        $user->fill($request->all());
+        $user->saveOrFail();
+
+        return response(['updated' => true], Response::HTTP_CREATED)
                 ->header('Location', route('user.show', ['id' => $user->id]));
     }
 

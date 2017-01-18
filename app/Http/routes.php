@@ -16,7 +16,7 @@ $app->get('/', function () use ($app) {
     return $app->version();
 });
 
-$app->get('users/{id}', [
+$app->get('users/{id:[\d]+}', [
     'as'   => 'user.show', 
     'uses' => 'UsersController@show'
 ]);
@@ -29,6 +29,11 @@ $app->get('users', [
 $app->post('users', [
     'as'   => 'user.store',
     'uses' => 'UsersController@store'
+]);
+
+$app->put('users/{id:[\d]+}', [
+    'as'   => 'user.update', 
+    'uses' => 'UsersController@update'
 ]);
 
 /** Authorized user **/

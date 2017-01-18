@@ -7,6 +7,7 @@ use TestCase;
 use App\User;
 use Carbon\Carbon;
 use Laravel\Lumen\Testing\DatabaseMigrations;
+use Illuminate\Http\Response;
 
 class UsersControllerTest extends TestCase
 {
@@ -25,18 +26,19 @@ class UsersControllerTest extends TestCase
     {
         parent::tearDown();
         Carbon::setTestNow();
+        $this->users = [];
     }
 
     /** @test **/
     public function get_return_status_code_404(): void
     {
-        $this->get('/users/999999')->seeStatusCode(404);
+        $this->get('/users/999999999')->seeStatusCode(Response::HTTP_NOT_FOUND);
     }
 
     /** @test **/
     public function get_return_status_code_200(): void
     {
-        $this->get('/users/' . $this->users[0]->id)->seeStatusCode(200);
+        $this->get('/users/' . $this->users[0]->id)->seeStatusCode(Response::HTTP_OK);
     }
 
     /** @test **/
@@ -66,7 +68,7 @@ class UsersControllerTest extends TestCase
     /** @test **/
     public function get_list_return_status_code_200(): void
     {
-        $this->get('/users')->seeStatusCode(200);
+        $this->get('/users')->seeStatusCode(Response::HTTP_OK);
     }
 
     /** @test **/
@@ -113,11 +115,76 @@ class UsersControllerTest extends TestCase
     public function store_should_respond_with_a_201_and_location_header_when_successful(): void
     {
         $this->post('/users', [
-            'username' => 'user.test.1',
+            'username' => 'user.test.2',
             'password' => '123456'
         ]);
 
-        $this->seeStatusCode(201)
+        $this->seeStatusCode(Response::HTTP_CREATED)
              ->seeHeaderWithRegExp('Location', '#/users/[\d]+$#');
+    }
+
+    /***
+     |
+     | Update user
+     |
+     ***/
+
+    /** @test **/
+    public function update_should_only_change_fillable_fields(): void
+    {
+        $user  = $this->users[0];
+        $user1 = $this->users[1];
+
+        $this->put('/users/' . $user->id, [
+            'id'       => $user1->id,
+            'username' => 'username.test.update',
+            'password' => 'password.test.update'
+        ]);
+
+        $this->seeStatusCode(Response::HTTP_OK)
+            ->seeJson([
+                'id' => $user->id,
+                'username' => 'username.test.update',
+                'password' => 'password.test.update'
+            ])
+            ->seeInDatabase('users', [
+                'id' => $user->id,
+                'username' => 'username.test.update',
+                'password' => 'password.test.update'
+            ]);
+    }
+
+    /** @test **/
+    public function update_should_fail_with_an_duplicate_username(): void
+    {
+        $user  = $this->users[0];
+        $user1 = $this->users[1];
+
+        $this->put('/users/' . $user->id, [
+            'username' => $user1->username
+        ]);
+
+        $this->seeStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);
+
+        $content = json_decode($this->response->getContent(), true);
+        $this->assertArrayHasKey('message', $content);
+    }
+
+    /** @test **/
+    public function update_should_fail_with_an_invalid_id(): void
+    {
+        $this->put('/users/999999999', [
+            'password' => 'password.test.update'
+        ]);
+
+        $this->seeStatusCode(Response::HTTP_NOT_FOUND);
+        $content = json_decode($this->response->getContent(), true);
+        $this->assertArrayHasKey('message', $content);
+    }
+
+    /** @test **/
+    public function update_should_not_match_an_invalid_route(): void
+    {
+        $this->put('/users/this-is-invalid')->seeStatusCode(Response::HTTP_NOT_FOUND);
     }
 }
