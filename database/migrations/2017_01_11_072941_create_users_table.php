@@ -18,7 +18,6 @@ class CreateUsersTable extends Migration
             $table->increments('id');
             $table->string('username', 100)->unique();
             $table->string('password', 100);
-            $table->boolean('deleted')->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

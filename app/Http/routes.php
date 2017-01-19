@@ -36,6 +36,11 @@ $app->put('users/{id:[\d]+}', [
     'uses' => 'UsersController@update'
 ]);
 
+$app->delete('users/{id:[\d]+}', [
+    'as'   => 'user.delete', 
+    'uses' => 'UsersController@destroy'
+]);
+
 /** Authorized user **/
 $app->group(['middleware' => 'auth'], function () use ($app) {
 

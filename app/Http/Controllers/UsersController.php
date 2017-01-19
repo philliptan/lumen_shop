@@ -45,7 +45,8 @@ class UsersController extends Controller
     public function store(Request $request): Response
     {
         $user = User::create($request->all());
-        return response(['created' => true], Response::HTTP_CREATED)
+        $data = $this->item($user, new UserTransformer());
+        return response($data, Response::HTTP_CREATED)
                 ->header('Location', route('user.show', ['id' => $user->id]));
     }
 
@@ -56,14 +57,27 @@ class UsersController extends Controller
      * @param  integer  $id
      * @return Response
      */
-    public function update(Request $request, int $id): Response
+    public function update(Request $request, int $id): array
     {
         $user = User::findOrFail($id);
         $user->fill($request->all());
         $user->saveOrFail();
 
-        return response(['updated' => true], Response::HTTP_CREATED)
-                ->header('Location', route('user.show', ['id' => $user->id]));
+        return $this->item($user, new UserTransformer());
+    }
+
+    /**
+     * DELETE /users/[\d]+
+     *
+     * @param  integer  $id
+     * @return Response
+     */
+    public function destroy(int $id): Response
+    {
+        $user = User::findOrFail($id);
+        $user->delete();
+
+        return response(null, Response::HTTP_NO_CONTENT);
     }
 
     //

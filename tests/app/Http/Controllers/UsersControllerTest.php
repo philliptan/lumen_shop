@@ -103,11 +103,23 @@ class UsersControllerTest extends TestCase
             'password' => '123456'
         ]);
 
-        $this->seeJson([
-                'created' => true
-            ])
+        $content = json_decode($this->response->getContent(), true);
+        $this->assertArrayHasKey('data', $content);
+
+        $data = $content['data'];
+
+        $this->assertTrue($data['id'] > 0, 'Expected a positive integer, but did not see one.');
+        $this->assertEquals('user.test.1', $data['username']);
+        $this->assertArrayHasKey('created', $data);
+        $this->assertEquals(Carbon::now()->toIso8601String(), $data['created']);
+        $this->assertArrayHasKey('updated', $data);
+        $this->assertEquals(Carbon::now()->toIso8601String(), $data['updated']);
+
+        $this
             ->seeInDatabase('users', [
-                   'username' => 'user.test.1'
+                   'username' => 'user.test.1',
+                   'password' => '123456',
+                   'id' => $data['id'],
             ]);
     }
 
@@ -142,16 +154,22 @@ class UsersControllerTest extends TestCase
         ]);
 
         $this->seeStatusCode(Response::HTTP_OK)
-            ->seeJson([
-                'id' => $user->id,
-                'username' => 'username.test.update',
-                'password' => 'password.test.update'
-            ])
             ->seeInDatabase('users', [
                 'id' => $user->id,
                 'username' => 'username.test.update',
                 'password' => 'password.test.update'
             ]);
+
+        $content = json_decode($this->response->getContent(), true);
+        $this->assertArrayHasKey('data', $content);
+
+        $data = $content['data'];
+
+        $this->assertArrayHasKey('created', $data);
+        $this->assertEquals(Carbon::now()->toIso8601String(), $data['created']);
+        $this->assertArrayHasKey('updated', $data);
+        $this->assertEquals(Carbon::now()->toIso8601String(), $data['updated']);
+
     }
 
     /** @test **/
@@ -186,5 +204,39 @@ class UsersControllerTest extends TestCase
     public function update_should_not_match_an_invalid_route(): void
     {
         $this->put('/users/this-is-invalid')->seeStatusCode(Response::HTTP_NOT_FOUND);
+    }
+
+    /***
+     |
+     | Delete user
+     |
+     ***/
+
+    /** @test **/
+    public function destroy_should_remove_a_valid_user(): void
+    {
+        $user = $this->users[9];
+        $this->delete('users/' . $user->id)
+            ->seeStatusCode(Response::HTTP_NO_CONTENT)
+            ->isEmpty();
+
+        $this->notSeeInDatabase('users', [
+            'id' => $user->id,
+            'deleted_at' => null
+        ]);
+    }
+
+    /** @test **/
+    public function destroy_should_return_a_404_with_an_invalid_id(): void
+    {
+        $this->delete('/users/999999999')
+            ->seeStatusCode(Response::HTTP_NOT_FOUND);
+    }
+
+    /** @test **/
+    public function destroy_should_not_match_an_invalid_route(): void
+    {
+        $this->delete('/users/this-is-invalid')
+            ->seeStatusCode(Response::HTTP_NOT_FOUND);
     }
 }
