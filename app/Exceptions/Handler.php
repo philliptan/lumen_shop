@@ -45,31 +45,36 @@ class Handler extends ExceptionHandler
      * @return \Illuminate\Http\Response
      */
     public function render($request, Exception $e)
-    {   
-        $statusCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-
-        if ($e instanceof ModelNotFoundException)
+    {
+        if ($request->wantsJson() && !($e instanceof ValidationException))
         {
-            $statusCode = Response::HTTP_NOT_FOUND;
+            $statusCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+
+            if ($e instanceof ModelNotFoundException)
+            {
+                $statusCode = Response::HTTP_NOT_FOUND;
+            }
+
+            if ($e instanceof HttpException)
+            {
+                $statusCode = $e->getStatusCode();
+            }
+
+            $message = Response::$statusTexts[$statusCode];
+
+            $content = ['message' => $message];
+
+            if (env('APP_DEBUG')) {
+                $content = array_merge($content,  [
+                                'file'    => $e->getFile(),
+                                'line'    => $e->getLine(),
+                                'trace'   => $e->getTrace(),
+                            ]);
+            }
+
+            return response($content, $statusCode);
         }
 
-        if ($e instanceof HttpException)
-        {
-            $statusCode = $e->getStatusCode();
-        }
-
-        $message = Response::$statusTexts[$statusCode];
-
-        $content = ['message' => $message];
-
-        if (env('APP_DEBUG')) {
-            $content = array_merge($content,  [
-                            'file'    => $e->getFile(),
-                            'line'    => $e->getLine(),
-                            'trace'   => $e->getTrace(),
-                        ]);
-        }
-
-        return response($content, $statusCode);
+        return parent::render($request, $e);
     }
 }

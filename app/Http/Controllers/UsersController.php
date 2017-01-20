@@ -44,6 +44,12 @@ class UsersController extends Controller
      */
     public function store(Request $request): Response
     {
+        // Validate
+        $this->validate($request, [
+            'username' => 'required',
+            'password' => 'required',
+        ]);
+
         $user = User::create($request->all());
         $data = $this->item($user, new UserTransformer());
         return response($data, Response::HTTP_CREATED)
